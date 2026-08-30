@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reflex - Executive Presentation Deck</title>
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --card-bg: rgba(22, 31, 49, 0.75);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --primary-accent: #38bdf8;
+            --red-accent: #ff4b6e;
+            --green-accent: #34d399;
+            --amber-accent: #fbbf24;
+            --purple-accent: #a78bfa;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(255, 75, 110, 0.1) 0%, transparent 45%);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2.5rem;
+            overflow: hidden;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 1.25rem;
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            background: linear-gradient(135deg, #ffffff 30%, var(--primary-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .logo span {
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            background: linear-gradient(135deg, var(--text-muted), #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .slide-counter {
+            color: var(--primary-accent);
+            font-family: monospace;
+            font-size: 0.95rem;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+        }
+
+        .slide {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            flex: 1;
+            padding: 2rem 0;
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tag {
+            color: var(--primary-accent);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        /* .tag::before {
+            content: '✨';
+            font-size: 0.85rem;
+        } */
+
+        h2 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 1.8rem;
+            letter-spacing: -0.02em;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            padding: 1.75rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px 0 rgba(56, 189, 248, 0.15);
+        }
+
+        .card h3 {
+            font-size: 1.15rem;
+            margin-bottom: 0.6rem;
+            font-weight: 700;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .text-red { color: var(--red-accent); }
+        .text-blue { color: var(--primary-accent); }
+        .text-amber { color: var(--amber-accent); }
+        .text-emerald { color: var(--green-accent); }
+        .text-purple { color: var(--purple-accent); }
+
+        /* Flow Diagram */
+        .diagram-container {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 100%;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .flow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+        }
+
+        .flow-box {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 1.25rem;
+            border-radius: 10px;
+            width: 28%;
+            font-size: 0.9rem;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .flow-box strong {
+            font-size: 1.05rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .flow-arrow {
+            color: var(--primary-accent);
+            font-size: 1rem;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+        }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            overflow: hidden;
+            font-size: 0.95rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        th, td {
+            padding: 1.1rem;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(30, 41, 59, 0.9);
+            color: var(--primary-accent);
+            font-weight: 700;
+            border-bottom: 1px solid var(--card-border);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+        }
+
+        td {
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-main);
+        }
+
+        /* Footer & Controls */
+        footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--card-border);
+            padding-top: 1.25rem;
+        }
+
+        button {
+            background: rgba(30, 41, 59, 0.8);
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+            padding: 0.6rem 1.4rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: rgba(51, 65, 85, 0.9);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        button.btn-next {
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            border: 1px solid rgba(56, 189, 248, 0.5);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+
+        button.btn-next:hover {
+            background: linear-gradient(135deg, #0369a1, #075985);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+        }
+
+        .hint {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, rgba(255, 75, 110, 0.2), rgba(255, 75, 110, 0.05));
+            color: var(--red-accent);
+            border: 1px solid rgba(255, 75, 110, 0.3);
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">REFLEX <span>| Readiness Sprint Architecture</span></div>
+        <div class="slide-counter" id="slide-number">Slide 1 of 5</div>
+    </header>
+
+    <!-- Slide 1 -->
+    <main class="slide active">
+        <div class="tag">01. The Problem</div>
+        <h2>WhatsApp Coordination Causes Data Loss & Friction</h2>
+        <div class="grid-3">
+            <div class="card">
+                <h3 class="text-red">No Assignment Record</h3>
+                <p>WhatsApp messages get lost in busy group chats. Unclear which rider is assigned to which package.</p>
+            </div>
+            <div class="card">
+                <h3 class="text-red">Zero Live Visibility</h3>
+                <p>Shop owners constantly call riders mid-transit to check progress, causing safety risks and delays.</p>
+            </div>
+            <div class="card">
+                <h3 class="text-red">No Verified Proof</h3>
+                <p>Verbal confirmations leave no digital trail or timestamped proof of completed delivery.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Slide 2 -->
+    <main class="slide">
+        <div class="tag">02. The Solution</div>
+        <h2>Reflex: Role-Based Delivery Management</h2>
+        <div class="grid-3">
+            <div class="card">
+                <h3 class="text-blue">1. Retailer Staff</h3>
+                <p>Inputs customer details, item description, and delivery address into a structured web form.</p>
+            </div>
+            <div class="card">
+                <h3 class="text-amber">2. Dispatcher</h3>
+                <p>Views incoming requests in real time and assigns available riders with a single click.</p>
+            </div>
+            <div class="card">
+                <h3 class="text-emerald">3. Boda Rider</h3>
+                <p>Updates delivery status sequentially (Assigned &rarr; Picked Up &rarr; Delivered) with scan verification.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Slide 3 -->
+    <main class="slide">
+        <div class="tag">03. System Blueprint</div>
+        <h2>Resilient Decoupled REST Stack</h2>
+        <div class="diagram-container">
+            <div class="flow">
+                <div class="flow-box"><strong class="text-blue" style="display:block;">Web Frontend</strong><React-vite></React-vite></div>
+                <div class="flow-arrow">&rarr; HTTP REST / 5s Polling &rarr;</div>
+                <div class="flow-box"><strong class="text-emerald" style="display:block;">Node.js API</strong>Express Server Engine</div>
+                <div class="flow-arrow">&rarr; ACID SQL &rarr;</div>
+                <div class="flow-box"><strong class="text-purple" style="display:block;">Database</strong>PostgreSQL / SQLite</div>
+            </div>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">5-second HTTP short polling guarantees lightweight data usage and seamless auto-reconnects on spotty mobile coverage.</p>
+    </main>
+
+    <!-- Slide 4 -->
+    <main class="slide">
+        <div class="tag">04. Trade-Off Log</div>
+        <h2>Pragmatic Architectural Decisions</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Decision</th>
+                    <th>Weak Point</th>
+                    <th>"Acceptable Because..." Justification</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong style="color:var(--text-main);">HTTP Polling</strong></td>
+                    <td>5s state update delay</td>
+                    <td>Prevents frequent connection drops on weak 3G/4G networks vs WebSockets.</td>
+                </tr>
+                <tr>
+                    <td><strong style="color:var(--text-main);">Password-Verified Local Session</strong></td>
+                    <td>No JWT/refresh tokens, no password reset flow</td>
+                    <td>Each role signs in with real credentials (phone number + password, bcrypt-hashed server-side); session state then stays local rather than token-based, avoiding full OAuth/JWT complexity during rapid sprint execution.</td>
+                </tr>
+                <tr>
+                    <td><strong style="color:var(--text-main);">Single DB Instance</strong></td>
+                    <td>No cache layer (Redis)</td>
+                    <td>Retail shop transaction volumes do not hit concurrency bottlenecks initially.</td>
+                </tr>
+            </tbody>
+        </table>
+    </main>
+
+    <!-- Slide 5 -->
+    <main class="slide">
+        <div class="tag">05. Scalability Roadmap</div>
+        <h2>Future System Capabilities</h2>
+        <div class="grid-2">
+            <div class="card">
+                <span class="badge">Phase 2</span>
+                <h3 style="color:var(--text-main);">Africa's Talking SMS API Integration</h3>
+                <p>Automated SMS notifications dispatched directly to customers upon pickup and delivery completion.</p>
+            </div>
+            <div class="card">
+                <span class="badge">Phase 3</span>
+                <h3 style="color:var(--text-main);">Offline PWA & Local Caching</h3>
+                <p>Progressive Web App support allowing riders to update status offline and auto-push updates when reconnected.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <button id="prevBtn">Previous</button>
+        <div class="hint"> Use Left / Right Arrow Keys to Navigate</div>
+        <button id="nextBtn" class="btn-next">Next</button>
+    </footer>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const slideNum = document.getElementById('slide-number');
+
+        function updateSlide(index) {
+            slides.forEach((s, i) => s.classList.toggle('active', i === index));
+            slideNum.textContent = `Slide ${index + 1} of ${slides.length}`;
+        }
+
+        document.getElementById('prevBtn').onclick = () => { if (currentSlide > 0) updateSlide(--currentSlide); };
+        document.getElementById('nextBtn').onclick = () => { if (currentSlide < slides.length - 1) updateSlide(++currentSlide); };
+        document.onkeydown = (e) => {
+            if (e.key === "ArrowRight" && currentSlide < slides.length - 1) updateSlide(++currentSlide);
+            if (e.key === "ArrowLeft" && currentSlide > 0) updateSlide(--currentSlide);
+        };
+    </script>
+</body>
+</html>
