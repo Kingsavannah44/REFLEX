@@ -18,7 +18,8 @@
 USERS
 ├── user_id (Primary Key, UUID)
 ├── full_name (String)
-├── phone_number (String)
+├── phone_number (String, unique, used as login identifier)
+├── password_hash (String, bcrypt-hashed, never returned by the API)
 └── role (Enum: 'retailer', 'dispatcher', 'rider')
 
 ORDERS
