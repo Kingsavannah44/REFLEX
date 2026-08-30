@@ -30,9 +30,9 @@ export default function Login() {
     setSubmitting(true);
     setError(null);
     try {
-      const user = await api.login(phone.trim(), password);
-      setSession(user);
-      navigate(ROLE_HOME[user.role] || "/");
+      const session = await api.login(phone.trim(), password);
+      setSession(session);
+      navigate(ROLE_HOME[session.user.role] || "/");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -110,23 +110,22 @@ export default function Login() {
           </div>
           <div className="border border-line rounded-lg p-3 space-y-1.5 font-mono text-[11px] text-muted">
             <div className="flex justify-between gap-3">
-              <span>Retailer, Amina</span>
-              <span className="text-cream">0700000001 / retailer123</span>
+              <span>Retailer, Alice</span>
+              <span className="text-cream">+254711000001 / Password123!</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span>Dispatcher, James</span>
-              <span className="text-cream">0700000002 / dispatcher123</span>
+              <span>Dispatcher, Brian</span>
+              <span className="text-cream">+254711000002 / Password123!</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span>Rider, Kevin</span>
-              <span className="text-cream">0700000003 / rider123</span>
+              <span>Rider, Carol</span>
+              <span className="text-cream">+254711000003 / Password123!</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span>Rider, Faith</span>
-              <span className="text-cream">0700000004 / rider456</span>
+              <span>Rider, David</span>
+              <span className="text-cream">+254711000004 / Password123!</span>
             </div>
-          </div>
-        </motion.div>
+          </div>        </motion.div>
       </motion.div>
     </div>
   );

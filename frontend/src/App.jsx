@@ -6,9 +6,9 @@ import RiderView from "./pages/RiderView";
 import { getSession } from "./session";
 
 function RequireRole({ role, children }) {
-  const session = getSession();
-  if (!session) return <Navigate to="/" replace />;
-  if (session.role !== role) return <Navigate to="/" replace />;
+  const user = getSession();
+  if (!user) return <Navigate to="/" replace />;
+  if (user.role !== role) return <Navigate to="/" replace />;
   return children;
 }
 
@@ -17,30 +17,9 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route
-          path="/retailer"
-          element={
-            <RequireRole role="retailer">
-              <RetailerView />
-            </RequireRole>
-          }
-        />
-        <Route
-          path="/dispatcher"
-          element={
-            <RequireRole role="dispatcher">
-              <DispatcherView />
-            </RequireRole>
-          }
-        />
-        <Route
-          path="/rider"
-          element={
-            <RequireRole role="rider">
-              <RiderView />
-            </RequireRole>
-          }
-        />
+        <Route path="/retailer" element={<RequireRole role="retailer"><RetailerView /></RequireRole>} />
+        <Route path="/dispatcher" element={<RequireRole role="dispatcher"><DispatcherView /></RequireRole>} />
+        <Route path="/rider" element={<RequireRole role="rider"><RiderView /></RequireRole>} />
       </Routes>
     </BrowserRouter>
   );

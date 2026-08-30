@@ -1,71 +1,154 @@
-// API client for the Reflex backend.
-//
-// Contract (matches the finalized data model: USERS + ORDERS):
-//   POST  /api/login                       -> body: { phone_number, password } -> the matching
-//                                              user object on success, 401 on wrong credentials
-//   GET   /api/users                       -> list of { user_id, full_name, phone_number, role }
-//   GET   /api/orders?status=&assigned_rider=  -> list of orders, both filters optional
-//   POST  /api/orders                      -> create an order, body: { customer_name, customer_phone,
-//                                              delivery_address, item_description, created_by }
-//   PATCH /api/orders/:id/assign           -> body: { assigned_rider } -> sets status "assigned"
-//   PATCH /api/orders/:id/status           -> body: { status } -> "picked_up" | "delivered"
-//
-// The base URL is configurable so this points at the mock server today and
-// the real backend once it exists, with no code changes.
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+
+function getToken() {
+  try {
+    const raw = localStorage.getItem("reflex.session");
+    return raw ? JSON.parse(raw)?.accessToken : null;
+  } catch {
+    return null;
+  }
+}
 
 async function request(path, options = {}) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
+  const token = getToken();
+  const headers = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${BASE_URL}${path}`, { headers, ...options });
+
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    // If the server sent a structured { error: "..." } body, surface that
-    // message directly instead of the raw response text.
-    let message = `${options.method || "GET"} ${path} failed: ${res.status} ${body}`;
+    let message = `${options.method || "GET"} ${path} failed: ${res.status}`;
     try {
       const parsed = JSON.parse(body);
-      if (parsed?.error) message = parsed.error;
-    } catch {
-      // body wasn't JSON, keep the fallback message above
-    }
+      if (parsed?.error?.message) message = parsed.error.message;
+    } catch { /* not JSON */ }
     throw new Error(message);
   }
+
   if (res.status === 204) return null;
-  return res.json();
+  const json = await res.json();
+  return json?.data ?? json;
+}
+
+// Map backend delivery shape to the frontend's expected shape.
+// Backend uses snake_case UUIDs and uppercase statuses.
+// Frontend was built with mock data using different field names.
+function normalizeDelivery(d) {
+  return {
+    order_id: d.id,
+    customer_name: d.customer_name,
+    customer_phone: d.customer_phone,
+    delivery_address: d.delivery_address,
+    item_description: d.item_description,
+    status: d.status?.toLowerCase(),        // OPEN -> open, ASSIGNED -> assigned, etc.
+    created_by: d.created_by,
+    assigned_rider: d.assigned_rider_id,
+    created_at: d.created_at,
+    updated_at: d.updated_at,
+    qr_token: d.qr_token,
+    statusHistory: d.statusHistory,
+  };
+}
+
+// Map backend user shape to frontend expected shape.
+function normalizeUser(u) {
+  return {
+    user_id: u.id,
+    full_name: u.name,
+    phone_number: u.phone,
+    role: u.role === "retailer_staff" ? "retailer" : u.role,
+    is_active: u.is_active,
+  };
 }
 
 export const api = {
-  login: (phone_number, password) =>
-    request("/api/login", { method: "POST", body: JSON.stringify({ phone_number, password }) }),
-
-  listUsers: () => request("/api/users"),
-
-  listOrders: ({ status, assignedRider } = {}) => {
-    const params = new URLSearchParams();
-    if (status) params.set("status", status);
-    if (assignedRider) params.set("assigned_rider", assignedRider);
-    const qs = params.toString();
-    return request(`/api/orders${qs ? `?${qs}` : ""}`);
+  login: async (phone, password) => {
+    const data = await request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ phone, password }),
+    });
+    // Normalize user inside login response
+    return {
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      user: normalizeUser(data.user),
+    };
   },
 
-  createOrder: (order) =>
-    request("/api/orders", { method: "POST", body: JSON.stringify(order) }),
+  listRiders: async () => {
+    const data = await request("/api/riders");
+    return data.map(normalizeUser);
+  },
 
-  assignRider: (orderId, assignedRider) =>
-    request(`/api/orders/${orderId}/assign`, {
-      method: "PATCH",
-      body: JSON.stringify({ assigned_rider: assignedRider }),
-    }),
+  listUsers: async () => {
+    const data = await request("/api/riders");
+    return data.map(normalizeUser);
+  },
 
-  updateStatus: (orderId, status) =>
-    request(`/api/orders/${orderId}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status }),
-    }),
+  listOrders: async ({ status, assignedRider } = {}) => {
+    let deliveries;
+    if (assignedRider) {
+      deliveries = await request("/api/deliveries/assigned");
+    } else {
+      deliveries = await request("/api/deliveries/open");
+    }
+    return deliveries.map(normalizeDelivery);
+  },
+
+  listOpenDeliveries: async () => {
+    const data = await request("/api/deliveries/open");
+    return data.map(normalizeDelivery);
+  },
+
+  listMyDeliveries: async () => {
+    const data = await request("/api/deliveries/assigned");
+    return data.map(normalizeDelivery);
+  },
+
+  createOrder: async (order) => {
+    const data = await request("/api/deliveries", {
+      method: "POST",
+      body: JSON.stringify({
+        customerName: order.customer_name,
+        customerPhone: order.customer_phone,
+        deliveryAddress: order.delivery_address,
+        itemDescription: order.item_description,
+      }),
+    });
+    return normalizeDelivery(data);
+  },
+
+  assignRider: async (orderId, riderId) => {
+    const data = await request(`/api/deliveries/${orderId}/assign`, {
+      method: "PUT",
+      body: JSON.stringify({ riderId }),
+    });
+    return normalizeDelivery(data);
+  },
+
+  updateStatus: async (orderId, status) => {
+    // Frontend uses lowercase, backend expects uppercase
+    const backendStatus = status.toUpperCase();
+    const data = await request(`/api/deliveries/${orderId}/status`, {
+      method: "PUT",
+      body: JSON.stringify({ status: backendStatus }),
+    });
+    return normalizeDelivery(data);
+  },
+
+  confirmDelivery: async (orderId, qrToken) => {
+    const data = await request(`/api/deliveries/${orderId}/confirm`, {
+      method: "POST",
+      body: JSON.stringify({ qrToken }),
+    });
+    return normalizeDelivery(data);
+  },
+
+  getDelivery: async (orderId) => {
+    const data = await request(`/api/deliveries/${orderId}`);
+    return normalizeDelivery(data);
+  },
 };
 
-// Sync strategy per the finalized architecture: 5-second short HTTP polling,
-// not WebSockets (chosen for reliability on weak 3G and lower data usage).
 export const POLL_INTERVAL_MS = 5000;
