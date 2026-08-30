@@ -148,9 +148,11 @@ export default function RiderView() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      <DashboardSidebar user={user} items={navItems} activeKey={showingDetails ? "" : tab} />
+      <div className="hidden lg:block">
+        <DashboardSidebar user={user} items={navItems} activeKey={showingDetails ? "" : tab} />
+      </div>
 
-      <main className={`flex-1 min-w-0 p-6 ${isScanTab ? "bg-slate-950" : ""}`}>
+      <main className={`flex-1 min-w-0 p-4 lg:p-6 pb-24 lg:pb-6 ${isScanTab ? "bg-slate-950" : ""}`}>
         {showingDetails ? (
           <DetailsScreen
             order={selectedOrder}
@@ -212,7 +214,7 @@ export default function RiderView() {
           </div>
         ) : tab === "deliveries" ? (
           <div>
-            <div className="flex items-start justify-between mb-6">
+            <div className="flex flex-wrap items-start justify-between gap-y-2 mb-6">
               <div>
                 <h1 className="text-xl font-semibold text-slate-900">All Deliveries</h1>
                 <p className="text-sm text-slate-500 mt-0.5">Everything ever assigned to you.</p>
@@ -222,7 +224,7 @@ export default function RiderView() {
             {orders.length === 0 ? (
               <p className="text-sm text-slate-400 italic py-4">Nothing assigned to you yet.</p>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {orders.map((o) => (
                   <DeliveryRow key={o.order_id} order={o} onClick={() => openDetails(o)} />
                 ))}
@@ -231,7 +233,7 @@ export default function RiderView() {
           </div>
         ) : (
           <div>
-            <div className="flex items-start justify-between mb-6">
+            <div className="flex flex-wrap items-start justify-between gap-y-2 mb-6">
               <div>
                 <h1 className="text-xl font-semibold text-slate-900">
                   {greeting()}, {user.full_name.split(" ")[0]}!
@@ -298,7 +300,7 @@ export default function RiderView() {
             {active.length === 0 ? (
               <p className="text-sm text-slate-400 italic py-4">Nothing assigned to you right now.</p>
             ) : (
-              <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                 {active.map((o) => (
                   <DeliveryRow key={o.order_id} order={o} onClick={() => openDetails(o)} />
                 ))}
@@ -307,7 +309,7 @@ export default function RiderView() {
 
             <div className="bg-white border border-slate-200 rounded-xl p-4">
               <h2 className="text-sm font-semibold text-slate-800 mb-3">Quick Actions</h2>
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                 <QuickActionCard
                   icon={PlayCircle}
                   tone="green"
@@ -332,6 +334,34 @@ export default function RiderView() {
           </div>
         )}
       </main>
+
+      {/* Mobile-only bottom nav - the sidebar above is desktop-only (hidden below lg).
+          Real riders are on a phone, so this is the layout that actually matters
+          for them; the sidebar exists so this dashboard reads consistently with
+          Retailer/Dispatcher on a laptop during the demo. */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex items-stretch z-40">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = !showingDetails && tab === item.key;
+          return (
+            <button
+              key={item.key}
+              disabled={!item.onClick}
+              onClick={item.onClick}
+              className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${
+                !item.onClick
+                  ? "text-slate-300 cursor-not-allowed"
+                  : isActive
+                  ? "text-green-600"
+                  : "text-slate-400 hover:text-slate-600"
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              {item.key === "scan" ? "Scan" : item.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
