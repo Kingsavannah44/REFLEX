@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { env } from '../config/env';
 
-// Must be registered last in app.ts — Express identifies error handlers by arity (4 params)
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
   console.error(err.message);
 

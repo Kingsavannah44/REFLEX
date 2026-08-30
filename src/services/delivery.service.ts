@@ -57,7 +57,6 @@ export const DeliveryService = {
     if (rider.role !== 'rider') throw serviceError('That user is not a rider.', 400);
     if (!rider.is_active) throw serviceError('That rider account is inactive.', 400);
 
-    // Atomic WHERE status = 'OPEN' means a second concurrent dispatcher will get undefined back
     const updated = await DeliveryRepository.assignRider(deliveryId, input.riderId);
     if (!updated) {
       throw serviceError('Delivery was just assigned by someone else. Please refresh.', 409);
@@ -116,7 +115,6 @@ export const DeliveryService = {
     const delivery = await DeliveryRepository.findById(deliveryId);
     if (!delivery) throw serviceError('Delivery not found.', 404);
 
-    // Idempotent — scanning a second time is fine
     if (delivery.status === 'DELIVERED') {
       const history = await DeliveryRepository.getHistory(deliveryId);
       return { ...delivery, statusHistory: history };

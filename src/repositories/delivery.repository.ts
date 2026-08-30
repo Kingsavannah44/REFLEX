@@ -35,8 +35,6 @@ export const DeliveryRepository = {
       .orderBy('assigned_at', 'desc');
   },
 
-  // Uses WHERE status = 'OPEN' as an optimistic lock so two dispatchers
-  // assigning at the same time can't both succeed.
   async assignRider(deliveryId: string, riderId: string): Promise<Delivery | undefined> {
     const [updated] = await db<Delivery>(TABLE)
       .where({ id: deliveryId, status: 'OPEN' })

@@ -14,7 +14,6 @@ const router = Router();
 
 router.use(authenticate);
 
-// Static paths must come before /:id or Express will match them as an id param
 router.get('/open', authorize('dispatcher'), DeliveryController.getOpen);
 router.get('/assigned', authorize('rider'), DeliveryController.getAssigned);
 

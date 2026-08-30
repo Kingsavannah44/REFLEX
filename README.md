@@ -6,7 +6,7 @@ Delivery coordination system for small Kenyan retailers.
 
 - **Runtime:** Node.js + TypeScript
 - **Framework:** Express
-- **Database:** PostgreSQL (via Knex.js)
+- **Database:** Supabase (hosted PostgreSQL) via Knex.js
 - **Auth:** JWT (access + refresh tokens) + bcrypt
 - **Validation:** Zod
 - **Security:** Helmet, CORS, express-rate-limit
@@ -21,22 +21,39 @@ Delivery coordination system for small Kenyan retailers.
 npm install
 ```
 
-### 2. Configure environment
+### 2. Create a Supabase project
+
+Go to [supabase.com](https://supabase.com) and create a new project. Then navigate to:
+
+**Settings → Database → Connection string**
+
+Enable "Display connection pooler" and copy the two URLs you'll need:
+
+| Purpose | Mode | Port |
+|---|---|---|
+| App runtime (`DATABASE_URL`) | Transaction pooler | 6543 |
+| Running migrations | Session pooler | 5432 |
+
+Use the Transaction pooler URL in `.env` for day-to-day use. Switch to the Session pooler URL temporarily when running `npm run migrate`.
+
+### 3. Configure environment
 
 ```bash
 cp .env.example .env
 # Fill in DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET, QR_HMAC_SECRET
 ```
 
-### 3. Create the database
-
-```sql
-CREATE DATABASE reflex_db;
+Generate secure secrets with:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 ### 4. Run migrations
 
+> Use the **Session pooler** URL (port 5432) for migrations.
+
 ```bash
+# Temporarily set DATABASE_URL to the session pooler URL, then:
 npm run migrate
 ```
 
@@ -132,14 +149,14 @@ Invalid transitions return `400 Bad Request`.
 ```
 src/
 ├── config/
-│   ├── database.ts       # Knex connection
+│   ├── database.ts       # Knex + Supabase SSL connection
 │   ├── env.ts            # Typed environment variables
 │   └── knexfile.ts       # Knex migration config
 ├── controllers/
 │   ├── auth.controller.ts
 │   └── delivery.controller.ts
 ├── database/
-│   ├── migrations/       # Schema migrations
+│   ├── migrations/       # Schema migrations (run against Supabase)
 │   └── seeds/            # Test data
 ├── middleware/
 │   ├── authenticate.ts   # JWT verification
@@ -159,7 +176,7 @@ src/
 ├── types/
 │   └── index.ts          # Shared TypeScript types
 ├── utils/
-│   ├── jwt.ts            # Token sign/verify
+│   ├── jwt.ts
 │   ├── qr.ts             # HMAC QR token generation
 │   ├── response.ts       # Standardised API responses
 │   └── stateMachine.ts   # Delivery status transitions

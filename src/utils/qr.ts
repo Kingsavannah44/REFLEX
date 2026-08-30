@@ -1,9 +1,6 @@
 import crypto from 'crypto';
 import { env } from '../config/env';
 
-// Token format: base64(deliveryId).hmac-sha256-signature
-// This lets us verify a scan without an extra DB lookup in the future.
-
 export function generateQrToken(deliveryId: string): string {
   const hmac = crypto.createHmac('sha256', env.qrHmacSecret);
   hmac.update(deliveryId);

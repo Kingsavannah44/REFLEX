@@ -11,7 +11,6 @@ export const AuthService = {
   async login(input: LoginInput) {
     const user = await UserRepository.findByPhone(input.phone);
 
-    // Same message for "not found" and "wrong password" to avoid user enumeration
     if (!user || !(await bcrypt.compare(input.password, user.password_hash))) {
       throw authError('Invalid phone number or password.', 401);
     }
