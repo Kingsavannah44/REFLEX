@@ -60,12 +60,17 @@ export default function DispatcherView() {
   const [error, setError] = useState(null);
 
   function load() {
-    Promise.all([api.listOrders(), api.listUsers()])
-      .then(([allOrders, allUsers]) => {
-        setOrders(allOrders);
-        setUsers(allUsers);
-      })
-      .catch((err) => setError(err.message));
+    // Settled independently so a failure in one fetch can't wipe out data
+    // the other one loaded successfully.
+    Promise.allSettled([api.listOrders(), api.listUsers()]).then(([ordersResult, usersResult]) => {
+      if (ordersResult.status === "fulfilled") {
+        setOrders(ordersResult.value);
+        setError(null);
+      } else {
+        setError(ordersResult.reason.message);
+      }
+      if (usersResult.status === "fulfilled") setUsers(usersResult.value);
+    });
   }
 
   useEffect(() => {
