@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import QrScannerLib from "qr-scanner";
 
-// A genuinely working camera-based scanner (not a simulated button) - it
-// decodes whatever QR code is in view. There's no backend-issued token to
-// validate yet (that needs a qr_token field generated at order creation,
-// which isn't built), so for now any successfully decoded code confirms
-// delivery. Falls back to a manual button if the camera can't be reached.
+// A genuinely working camera-based scanner - it decodes whatever QR code is
+// in view and hands the real decoded string up via onScan. The backend
+// validates that exact token server-side and has no manual bypass, so the
+// "can't scan" fallback is a real text field for typing the same code in,
+// not a one-click skip.
 export default function QrScanner({ onScan, onManualConfirm }) {
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
   const [cameraError, setCameraError] = useState(null);
   const [ready, setReady] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualCode, setManualCode] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -45,6 +47,11 @@ export default function QrScanner({ onScan, onManualConfirm }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function submitManualCode(e) {
+    e.preventDefault();
+    if (manualCode.trim()) onManualConfirm(manualCode.trim());
+  }
+
   return (
     <div className="space-y-3">
       <div className="relative rounded-2xl overflow-hidden bg-slate-950 aspect-square">
@@ -66,17 +73,33 @@ export default function QrScanner({ onScan, onManualConfirm }) {
       </div>
 
       {cameraError && (
-        <p className="text-xs text-red-400">
-          Camera unavailable ({cameraError}). Confirm manually instead:
-        </p>
+        <p className="text-xs text-red-400">Camera unavailable ({cameraError}).</p>
       )}
 
-      <button
-        onClick={onManualConfirm}
-        className="w-full text-center text-xs text-slate-400 hover:text-slate-200 underline transition-colors"
-      >
-        {cameraError ? "Confirm delivery manually" : "Can't scan? Confirm manually"}
-      </button>
+      {showManualEntry ? (
+        <form onSubmit={submitManualCode} className="space-y-2">
+          <input
+            autoFocus
+            value={manualCode}
+            onChange={(e) => setManualCode(e.target.value)}
+            placeholder="Paste or type the delivery code"
+            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-green-400"
+          />
+          <button
+            type="submit"
+            className="w-full bg-green-500 hover:bg-green-600 text-white font-medium text-sm rounded-lg py-2 transition-colors"
+          >
+            Confirm with this code
+          </button>
+        </form>
+      ) : (
+        <button
+          onClick={() => setShowManualEntry(true)}
+          className="w-full text-center text-xs text-slate-400 hover:text-slate-200 underline transition-colors"
+        >
+          Can't scan? Enter the code manually
+        </button>
+      )}
     </div>
   );
 }

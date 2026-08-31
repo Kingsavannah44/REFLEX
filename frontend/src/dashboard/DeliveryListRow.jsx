@@ -6,6 +6,7 @@ const DOT = {
   assigned: "bg-amber-400",
   picked_up: "bg-blue-400",
   delivered: "bg-green-400",
+  cancelled: "bg-red-400",
 };
 
 function timeOf(order) {

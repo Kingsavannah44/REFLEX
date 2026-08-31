@@ -21,6 +21,7 @@ import DeliveryListRow from "../dashboard/DeliveryListRow";
 import LiveMap from "../dashboard/LiveMap";
 import QuickActionCard from "../dashboard/QuickActionCard";
 import NewDeliveryModal from "../dashboard/NewDeliveryModal";
+import DeliveryQrModal from "../dashboard/DeliveryQrModal";
 import Avatar from "../dashboard/Avatar";
 import AccountMenu from "../dashboard/AccountMenu";
 import CustomersList from "../dashboard/CustomersList";
@@ -43,18 +44,27 @@ export default function RetailerView() {
   const [modalOpen, setModalOpen] = useState(false);
   const [tab, setTab] = useState("dashboard");
   const [search, setSearch] = useState("");
+  const [qrOrder, setQrOrder] = useState(null);
+
+  // Only deliveries the rider hasn't already confirmed still need their QR
+  // code shown - once delivered, scanning it again would be pointless.
+  function qrClickHandler(order) {
+    return order.qr_token && order.status !== "delivered" ? () => setQrOrder(order) : undefined;
+  }
 
   function load() {
-    Promise.all([api.listOrders(), api.listUsers()])
-      .then(([allOrders, allUsers]) => {
+    // Settled independently so a failure in one fetch can't wipe out data
+    // the other one loaded successfully.
+    Promise.allSettled([api.listOrders(), api.listUsers()]).then(([ordersResult, usersResult]) => {
+      if (ordersResult.status === "fulfilled") {
         setOrders(
-          allOrders
+          ordersResult.value
             .filter((o) => o.created_by === user.user_id)
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
         );
-        setUsers(allUsers);
-      })
-      .catch(() => {});
+      }
+      if (usersResult.status === "fulfilled") setUsers(usersResult.value);
+    });
   }
 
   useEffect(() => {
@@ -127,13 +137,14 @@ export default function RetailerView() {
               <div className="bg-white border border-slate-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-sm font-semibold text-slate-800">Recent Deliveries</h2>
+                  <span className="text-xs text-slate-400">Click one to show its QR code</span>
                 </div>
                 {orders.length === 0 ? (
                   <p className="text-sm text-slate-400 italic py-4">
                     Nothing logged yet, use New Delivery to get started.
                   </p>
                 ) : (
-                  orders.slice(0, 6).map((o) => <DeliveryListRow key={o.order_id} order={o} />)
+                  orders.slice(0, 6).map((o) => <DeliveryListRow key={o.order_id} order={o} onClick={qrClickHandler(o)} />)
                 )}
               </div>
 
@@ -202,7 +213,10 @@ export default function RetailerView() {
 
         {tab === "deliveries" && (
           <div>
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">My Deliveries</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-slate-900">My Deliveries</h2>
+              <span className="text-xs text-slate-400">Click one to show its QR code</span>
+            </div>
             <div className="relative mb-4 max-w-sm">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -218,7 +232,7 @@ export default function RetailerView() {
                   {q ? "No delivery matches that search." : "Nothing logged yet, use New Delivery to get started."}
                 </p>
               ) : (
-                searchedOrders.map((o) => <DeliveryListRow key={o.order_id} order={o} />)
+                searchedOrders.map((o) => <DeliveryListRow key={o.order_id} order={o} onClick={qrClickHandler(o)} />)
               )}
             </div>
           </div>
@@ -252,6 +266,7 @@ export default function RetailerView() {
         createdBy={user.user_id}
         onCreated={load}
       />
+      <DeliveryQrModal order={qrOrder} onClose={() => setQrOrder(null)} />
     </div>
   );
 }
