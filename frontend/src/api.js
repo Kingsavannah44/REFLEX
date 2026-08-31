@@ -31,6 +31,19 @@ async function request(path, options = {}) {
   return json?.data ?? json;
 }
 
+// Backend's DeliveryStatus enum uses different words than the frontend was
+// originally built against, not just different casing - OPEN is the same
+// concept as what the rest of this app calls "pending" (created, not yet
+// assigned). Lowercasing alone silently breaks every status === "pending"
+// check across all three dashboards, which is exactly what happened here.
+const STATUS_FROM_BACKEND = {
+  OPEN: "pending",
+  ASSIGNED: "assigned",
+  PICKED_UP: "picked_up",
+  DELIVERED: "delivered",
+  CANCELLED: "cancelled",
+};
+
 // Map backend delivery shape to the frontend's expected shape.
 // Backend uses snake_case UUIDs and uppercase statuses.
 // Frontend was built with mock data using different field names.
@@ -41,7 +54,7 @@ function normalizeDelivery(d) {
     customer_phone: d.customer_phone,
     delivery_address: d.delivery_address,
     item_description: d.item_description,
-    status: d.status?.toLowerCase(),        // OPEN -> open, ASSIGNED -> assigned, etc.
+    status: STATUS_FROM_BACKEND[d.status] || d.status?.toLowerCase(),
     created_by: d.created_by,
     assigned_rider: d.assigned_rider_id,
     created_at: d.created_at,

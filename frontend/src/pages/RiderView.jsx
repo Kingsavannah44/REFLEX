@@ -62,19 +62,26 @@ export default function RiderView() {
   const [updating, setUpdating] = useState(null);
   const [justDelivered, setJustDelivered] = useState(null);
   const [error, setError] = useState(null);
+  const [confirmError, setConfirmError] = useState(null);
 
   function load() {
-    Promise.all([api.listOrders({ assignedRider: user.user_id }), api.listUsers()])
-      .then(([allOrders, allUsers]) => {
-        setOrders(allOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
-        setUsers(allUsers);
-        setError(null);
-      })
-      .catch((err) => {
-        // Fetch failed (likely offline) - keep showing the last-known list
-        // rather than wiping it, so the rider can keep working.
-        setError(err.message);
-      });
+    // Settled independently on purpose: /api/users isn't reachable by every
+    // role yet (only dispatchers can currently list other people), and that
+    // shouldn't wipe out a delivery list that loaded just fine. A rider who
+    // can't look up names still needs to see their actual deliveries.
+    Promise.allSettled([api.listOrders({ assignedRider: user.user_id }), api.listUsers()]).then(
+      ([ordersResult, usersResult]) => {
+        if (ordersResult.status === "fulfilled") {
+          setOrders(ordersResult.value.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+          setError(null);
+        } else {
+          // Fetch failed (likely offline) - keep showing the last-known list
+          // rather than wiping it, so the rider can keep working.
+          setError(ordersResult.reason.message);
+        }
+        if (usersResult.status === "fulfilled") setUsers(usersResult.value);
+      }
+    );
   }
 
   useEffect(() => {
@@ -107,14 +114,31 @@ export default function RiderView() {
     setUpdating(null);
   }
 
-  async function confirmDelivered(order) {
+  // Confirming delivery has to go through the real /confirm endpoint with
+  // the delivery's actual QR token - unlike pickup, this genuinely can't be
+  // queued for later, since the backend has to validate the token live.
+  // A wrong or missing code surfaces as a real error, not a silent success.
+  async function confirmDelivered(order, scannedToken) {
+    if (!navigator.onLine) {
+      setConfirmError("You're offline - reconnect before confirming a delivery.");
+      return;
+    }
     setUpdating(order.order_id);
-    await updateOrderStatus(order, "delivered");
-    setUpdating(null);
-    setJustDelivered({ ...order, deliveredAt: new Date() });
-    setSelectedId(null);
-    setTab("home");
-    setTimeout(() => setJustDelivered(null), 4500);
+    setConfirmError(null);
+    try {
+      await api.confirmDelivery(order.order_id, scannedToken);
+      setOrders((prev) =>
+        prev.map((o) => (o.order_id === order.order_id ? { ...o, status: "delivered" } : o))
+      );
+      setJustDelivered({ ...order, deliveredAt: new Date() });
+      setSelectedId(null);
+      setTab("home");
+      setTimeout(() => setJustDelivered(null), 4500);
+    } catch (err) {
+      setConfirmError(err.message);
+    } finally {
+      setUpdating(null);
+    }
   }
 
   const active = orders.filter((o) => o.status !== "delivered");
@@ -174,10 +198,13 @@ export default function RiderView() {
                 : "No delivery is ready to confirm right now."}
             </p>
             <div className="max-w-xs">
+              {confirmError && (
+                <p className="text-xs text-red-400 mb-3">{confirmError}</p>
+              )}
               {readyToScan ? (
                 <QrScanner
-                  onScan={() => confirmDelivered(readyToScan)}
-                  onManualConfirm={() => confirmDelivered(readyToScan)}
+                  onScan={(token) => confirmDelivered(readyToScan, token)}
+                  onManualConfirm={(token) => confirmDelivered(readyToScan, token)}
                 />
               ) : (
                 <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">

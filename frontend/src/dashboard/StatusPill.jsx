@@ -3,6 +3,7 @@ const CONFIG = {
   assigned: { label: "Assigned", cls: "bg-amber-50 text-amber-700" },
   picked_up: { label: "Picked Up", cls: "bg-blue-50 text-blue-700" },
   delivered: { label: "Delivered", cls: "bg-green-50 text-green-700" },
+  cancelled: { label: "Cancelled", cls: "bg-red-50 text-red-700" },
 };
 
 export default function StatusPill({ status }) {
