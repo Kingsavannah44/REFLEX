@@ -14,7 +14,20 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: env.nodeEnv === 'production' ? process.env['FRONTEND_URL'] : '*',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (curl, Postman, server-to-server)
+      if (!origin) return callback(null, true);
+
+      const allowed = [
+        process.env['FRONTEND_URL'],
+        'https://reflex-mu-eight.vercel.app',
+        'http://localhost:5173',
+        'http://localhost:3000',
+      ].filter(Boolean);
+
+      if (allowed.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
     credentials: true,
   }),
 );
