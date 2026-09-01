@@ -1,4 +1,8 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+// Hardcode the production URL as fallback so the app works even if
+// VITE_API_BASE_URL is not picked up by the Vercel build.
+const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://reflex-6axo.onrender.com";
 
 function getToken() {
   try {
@@ -31,11 +35,7 @@ async function request(path, options = {}) {
   return json?.data ?? json;
 }
 
-// Backend's DeliveryStatus enum uses different words than the frontend was
-// originally built against, not just different casing - OPEN is the same
-// concept as what the rest of this app calls "pending" (created, not yet
-// assigned). Lowercasing alone silently breaks every status === "pending"
-// check across all three dashboards, which is exactly what happened here.
+// OPEN in the backend = "pending" in the frontend (unassigned, not yet dispatched)
 const STATUS_FROM_BACKEND = {
   OPEN: "pending",
   ASSIGNED: "assigned",
@@ -44,9 +44,6 @@ const STATUS_FROM_BACKEND = {
   CANCELLED: "cancelled",
 };
 
-// Map backend delivery shape to the frontend's expected shape.
-// Backend uses snake_case UUIDs and uppercase statuses.
-// Frontend was built with mock data using different field names.
 function normalizeDelivery(d) {
   return {
     order_id: d.id,
@@ -64,7 +61,6 @@ function normalizeDelivery(d) {
   };
 }
 
-// Map backend user shape to frontend expected shape.
 function normalizeUser(u) {
   return {
     user_id: u.id,
@@ -81,7 +77,6 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ phone, password }),
     });
-    // Normalize user inside login response
     return {
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,
@@ -89,33 +84,22 @@ export const api = {
     };
   },
 
-  listRiders: async () => {
-    const data = await request("/api/riders");
-    return data.map(normalizeUser);
-  },
-
   listUsers: async () => {
     const data = await request("/api/riders");
     return data.map(normalizeUser);
   },
 
-  listOrders: async ({ status, assignedRider } = {}) => {
-    let deliveries;
-    if (assignedRider) {
-      deliveries = await request("/api/deliveries/assigned");
-    } else {
-      deliveries = await request("/api/deliveries/open");
-    }
-    return deliveries.map(normalizeDelivery);
+  listRiders: async () => {
+    const data = await request("/api/riders");
+    return data.map(normalizeUser);
   },
 
-  listOpenDeliveries: async () => {
-    const data = await request("/api/deliveries/open");
-    return data.map(normalizeDelivery);
-  },
-
-  listMyDeliveries: async () => {
-    const data = await request("/api/deliveries/assigned");
+  // Dispatcher sees all open deliveries; rider sees their own assigned ones.
+  // The assignedRider param tells us which endpoint to hit.
+  listOrders: async ({ assignedRider } = {}) => {
+    const data = assignedRider
+      ? await request("/api/deliveries/assigned")
+      : await request("/api/deliveries/open");
     return data.map(normalizeDelivery);
   },
 
@@ -141,11 +125,9 @@ export const api = {
   },
 
   updateStatus: async (orderId, status) => {
-    // Frontend uses lowercase, backend expects uppercase
-    const backendStatus = status.toUpperCase();
     const data = await request(`/api/deliveries/${orderId}/status`, {
       method: "PUT",
-      body: JSON.stringify({ status: backendStatus }),
+      body: JSON.stringify({ status: status.toUpperCase() }),
     });
     return normalizeDelivery(data);
   },
