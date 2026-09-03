@@ -1,57 +1,188 @@
-# Reflex - System Architecture & Technical Documentation
+# Reflex Backend
 
-This repository contains the complete system design blueprint, trade-off analysis, visual architecture diagrams, and presentation deck for **Reflex**, a real-time delivery management system designed to replace unstructured WhatsApp coordination for small retail businesses.
+Delivery coordination system for small Kenyan retailers.
 
-## Repository Contents
+## Stack
 
-* `docs/system-architecture.md`: Comprehensive System Blueprint, Data Schema, Workflow Logic, and 1-Page Trade-Off Log.
-* `docs/demo-script.md`: 10-Minute Executive Presentation Script, Role-Based Demo Blueprint, and Practice Timing Logs.
-* `docs/images/`: Visual System Architecture Diagrams (Mermaid SVG/PNG).
-* `presentation/reflex-presentation.html`: Standalone 5-Slide Executive Pitch Deck.
+- **Runtime:** Node.js + TypeScript
+- **Framework:** Express
+- **Database:** Supabase (hosted PostgreSQL) via Knex.js
+- **Auth:** JWT (access + refresh tokens) + bcrypt
+- **Validation:** Zod
+- **Security:** Helmet, CORS, express-rate-limit
 
-## Core Architectural Overview
+---
 
-* **Frontend Specification:** Web-based Responsive Interface (HTML5/Tailwind CSS/JavaScript).
-* **Backend Specification:** Event-driven RESTful API (Node.js/Express).
-* **Database Schema:** Relational Schema (PostgreSQL/SQLite) enforcing ACID compliance.
-* **Sync Strategy:** 5-Second HTTP Short Polling optimized for low data consumption on fluctuating 3G/4G networks.
+## Quick Start
 
-Finalized System Architecture Document
-1. Tech Stack Selection & Justification
-Frontend: Responsive Web App (React)
-o	Justification: Works across mobile (Android browsers for riders) and desktop (for retailers) without demanding app store downloads or app installations.
-Backend: Node.js + Express REST API
-o	Justification: Lightweight, event-driven, non-blocking asynchronous architecture that handles multiple status updates efficiently.
-Database: SQLite / PostgreSQL
-o	Justification: Relational database enforcing ACID compliance to prevent orphaned orders or lost rider assignments.
-Data Syncing: Short HTTP Polling (5-second intervals)
-o	Justification: Minimal mobile data usage, reliable execution on spotty 3G/4G networks across Kenya, and simple logic to maintain.
-2. Complete Data Model Schema
-USERS
-├── user_id (Primary Key, UUID)
-├── full_name (String)
-├── phone_number (String)
-└── role (Enum: 'retailer', 'dispatcher', 'rider')
+### 1. Clone and install
 
-ORDERS
-├── order_id (Primary Key, UUID)
-├── customer_name (String)
-├── customer_phone (String)
-├── delivery_address (Text)
-├── item_description (Text)
-├── status (Enum: 'pending', 'assigned', 'picked_up', 'delivered')
-├── created_by (Foreign Key -> USERS.user_id)
-├── assigned_rider (Foreign Key -> USERS.user_id, Nullable)
-├── created_at (Timestamp)
-└── updated_at (Timestamp)
-3. System Workflow Logic & Boundaries
-•	Retailer Workflow: Logs into the dashboard, inputs delivery details, and generates a pending order.
-•	Dispatcher Workflow: Filters all pending orders, views active riders, and assigns a rider ID to update status to assigned.
-•	Rider Workflow: Receives assigned task on their mobile screen, taps Mark Picked Up (picked_up), and scans a QR code/taps Confirm Delivery on arrival (delivered).
-•	Offline/External Operations: Payment collections (cash/M-Pesa) and physical package han doffs occur externally. If mobile coverage drops, the app caches the status locally and pushes the payload once reconnected. 
-Finalized 1-Page Trade-Off Log
-Architecture Decision	Identified Weak Point / Compromise	"Acceptable Because..." Justification	Future Scalability Improvement
-HTTP Short Polling vs. WebSockets	Higher server requests per minute; minor delay (up to 5 seconds) in state updates.	Acceptable because it eliminates persistent connection drops on weak 3G networks and reduces mobile data consumption for riders.	Migrate to WebSockets or Server-Sent Events (SSE) as network infrastructure scales.
-Local State Auth vs. OAuth/JWT	Simplified role switching using local storage/session states instead of full multi-tenant token auth.	Acceptable because it allows clear end-to-end testing and demoing of cross-role workflows within tight sprint constraints.	Implement JWT (JSON Web Tokens) with role-based access control middleware.
-Single Central Database vs. Distributed Cache	Database querying directly on every status update without a caching layer like Redis.	Acceptable because order volumes for neighborhood retail shops do not reach high-concurrency bottlenecks during initial operations.	Add a Redis caching layer for active rider session queries and open order queues.
+```bash
+npm install
+```
 
+### 2. Create a Supabase project
+
+Go to [supabase.com](https://supabase.com) and create a new project. Then navigate to:
+
+**Settings → Database → Connection string**
+
+Enable "Display connection pooler" and copy the two URLs you'll need:
+
+| Purpose | Mode | Port |
+|---|---|---|
+| App runtime (`DATABASE_URL`) | Transaction pooler | 6543 |
+| Running migrations | Session pooler | 5432 |
+
+Use the Transaction pooler URL in `.env` for day-to-day use. Switch to the Session pooler URL temporarily when running `npm run migrate`.
+
+### 3. Configure environment
+
+```bash
+cp .env.example .env
+# Fill in DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET, QR_HMAC_SECRET
+```
+
+Generate secure secrets with:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+### 4. Run migrations
+
+> Use the **Session pooler** URL (port 5432) for migrations.
+
+```bash
+# Temporarily set DATABASE_URL to the session pooler URL, then:
+npm run migrate
+```
+
+### 5. Seed test users
+
+```bash
+npm run seed
+```
+
+### 6. Start development server
+
+```bash
+npm run dev
+```
+
+Server starts at: `http://localhost:3000`
+
+---
+
+## Seeded Test Accounts
+
+All passwords: `Password123!`
+
+| Phone | Role | Name |
+|---|---|---|
+| +254711000001 | retailer_staff | Alice Wanjiru |
+| +254711000002 | dispatcher | Brian Ochieng |
+| +254711000003 | rider | Carol Muthoni |
+| +254711000004 | rider | David Kamau |
+
+---
+
+## API Endpoints
+
+### Health
+```
+GET /health
+```
+
+### Auth
+```
+POST /api/auth/login        → { phone, password }
+POST /api/auth/refresh      → { refreshToken }
+```
+
+### Deliveries
+```
+POST   /api/deliveries              → retailer_staff: create delivery
+GET    /api/deliveries/open         → dispatcher: list OPEN deliveries
+GET    /api/deliveries/assigned     → rider: list own active deliveries
+GET    /api/deliveries/:id          → any role: get delivery + history
+PUT    /api/deliveries/:id/assign   → dispatcher: assign rider { riderId }
+PUT    /api/deliveries/:id/status   → rider: update status { status, notes }
+POST   /api/deliveries/:id/confirm  → rider: QR confirm delivery { qrToken }
+```
+
+### Riders
+```
+GET    /api/riders                  → dispatcher: list active riders
+```
+
+---
+
+## Delivery Status Flow
+
+```
+OPEN → ASSIGNED → PICKED_UP → DELIVERED
+OPEN → CANCELLED
+ASSIGNED → CANCELLED
+```
+
+Invalid transitions return `400 Bad Request`.
+
+---
+
+## Golden Path (Demo Flow)
+
+1. Login as Alice (retailer_staff) → `POST /api/auth/login`
+2. Create delivery → `POST /api/deliveries`
+3. Login as Brian (dispatcher) → `POST /api/auth/login`
+4. View open deliveries → `GET /api/deliveries/open`
+5. Get available riders → `GET /api/riders`
+6. Assign Carol to delivery → `PUT /api/deliveries/:id/assign`
+7. Login as Carol (rider) → `POST /api/auth/login`
+8. View assigned deliveries → `GET /api/deliveries/assigned`
+9. Mark picked up → `PUT /api/deliveries/:id/status` `{ "status": "PICKED_UP" }`
+10. Confirm delivery (QR scan) → `POST /api/deliveries/:id/confirm` `{ "qrToken": "..." }`
+
+---
+
+## Project Structure
+
+```
+src/
+├── config/
+│   ├── database.ts       # Knex + Supabase SSL connection
+│   ├── env.ts            # Typed environment variables
+│   └── knexfile.ts       # Knex migration config
+├── controllers/
+│   ├── auth.controller.ts
+│   └── delivery.controller.ts
+├── database/
+│   ├── migrations/       # Schema migrations (run against Supabase)
+│   └── seeds/            # Test data
+├── middleware/
+│   ├── authenticate.ts   # JWT verification
+│   ├── authorize.ts      # Role-based access control
+│   ├── errorHandler.ts   # Global error handler
+│   └── validate.ts       # Zod request body validation
+├── repositories/
+│   ├── delivery.repository.ts
+│   └── user.repository.ts
+├── routes/
+│   ├── auth.routes.ts
+│   ├── delivery.routes.ts
+│   └── rider.routes.ts
+├── services/
+│   ├── auth.service.ts
+│   └── delivery.service.ts
+├── types/
+│   └── index.ts          # Shared TypeScript types
+├── utils/
+│   ├── jwt.ts
+│   ├── qr.ts             # HMAC QR token generation
+│   ├── response.ts       # Standardised API responses
+│   └── stateMachine.ts   # Delivery status transitions
+├── validators/
+│   ├── auth.validators.ts
+│   └── delivery.validators.ts
+├── app.ts                # Express app setup
+└── server.ts             # Bootstrap + graceful shutdown
+```

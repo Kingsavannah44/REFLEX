@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Dark theme (default) — RGB channels, so Tailwind's <alpha-value> and
+     plain rgb(var(..) / a) both work for opacity modifiers. */
+  --c-ink: 11 13 16; /* page background */
+  --c-surface: 21 24 29; /* card background */
+  --c-surface2: 29 33 40; /* input background */
+  --c-line: 42 47 56; /* borders */
+  --c-cream: 242 241 237; /* primary text */
+  --c-muted: 139 144 154; /* secondary text */
+  --c-signal: 255 77 61; /* accent: urgent/primary */
+  --c-signal2: 255 122 82; /* accent hover */
+  --c-go: 61 220 151; /* success/available */
+  --c-wait: 242 180 65; /* in-progress */
+}
+
+:root.light {
+  --c-ink: 247 245 241;
+  --c-surface: 255 255 255;
+  --c-surface2: 255 255 255;
+  --c-line: 228 224 216;
+  --c-cream: 22 24 29;
+  --c-muted: 107 111 120;
+  --c-signal: 217 74 50;
+  --c-signal2: 232 97 63;
+  --c-go: 31 157 102;
+  --c-wait: 166 108 20;
+}
+
+@layer base {
+  body {
+    @apply bg-ink text-cream font-body antialiased transition-colors duration-300;
+    background-image: radial-gradient(rgb(var(--c-signal) / 0.05) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-attachment: fixed;
+  }
+  ::selection {
+    @apply bg-signal text-ink;
+  }
+  input,
+  textarea,
+  select {
+    @apply bg-surface2 border border-line rounded-md px-3 py-2 text-sm text-cream placeholder:text-muted outline-none transition-all duration-150;
+  }
+  input:focus,
+  textarea:focus,
+  select:focus {
+    @apply border-signal;
+    box-shadow: 0 0 0 3px rgb(var(--c-signal) / 0.12);
+  }
+  select option {
+    @apply bg-surface2 text-cream;
+  }
+  label {
+    @apply block text-xs uppercase tracking-wide text-muted mb-1.5 font-mono;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply relative bg-signal text-ink font-semibold text-sm rounded-md px-4 py-2.5 transition-colors duration-150 hover:bg-signal2 disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden;
+  }
+  .btn-ghost {
+    @apply text-sm text-muted hover:text-cream transition-colors duration-150;
+  }
+  .card {
+    @apply bg-surface border border-line rounded-lg p-4 transition-colors duration-300;
+  }
+  .eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-[0.16em] text-signal;
+  }
+}
+
+@keyframes livePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--c-go) / 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgb(var(--c-go) / 0);
+  }
+}
+.live-dot {
+  animation: livePulse 2.2s ease-in-out infinite;
+}
