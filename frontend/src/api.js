@@ -26,6 +26,12 @@ async function request(path, options = {}) {
     try {
       const parsed = JSON.parse(body);
       if (parsed?.error?.message) message = parsed.error.message;
+      // Validation errors carry the actually useful part in error.details
+      // (which field, and why) - the top-level message alone is just
+      // "Validation failed." with no way to know what to fix.
+      if (Array.isArray(parsed?.error?.details) && parsed.error.details.length > 0) {
+        message = parsed.error.details.map((d) => d.message).join(" ");
+      }
     } catch { /* not JSON */ }
     throw new Error(message);
   }

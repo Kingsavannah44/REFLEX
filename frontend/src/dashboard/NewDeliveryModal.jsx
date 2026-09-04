@@ -10,6 +10,20 @@ const EMPTY = {
   item_description: "",
 };
 
+// Retailers naturally type a local Kenyan number (07XX..., or missing the
+// leading 0 entirely), but the backend's validator requires strict E.164
+// (+254...). Converting it here means the retailer never has to think about
+// the format, instead of hitting a validation error with no hint of what
+// to type differently.
+function normalizeKenyanPhone(raw) {
+  const digits = raw.trim().replace(/[^\d+]/g, "");
+  if (digits.startsWith("+254")) return digits;
+  if (digits.startsWith("254")) return `+${digits}`;
+  if (digits.startsWith("0")) return `+254${digits.slice(1)}`;
+  if (digits.length === 9) return `+254${digits}`;
+  return raw.trim();
+}
+
 export default function NewDeliveryModal({ open, onClose, createdBy, onCreated }) {
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
@@ -24,7 +38,11 @@ export default function NewDeliveryModal({ open, onClose, createdBy, onCreated }
     setSubmitting(true);
     setError(null);
     try {
-      await api.createOrder({ ...form, created_by: createdBy });
+      await api.createOrder({
+        ...form,
+        customer_phone: normalizeKenyanPhone(form.customer_phone),
+        created_by: createdBy,
+      });
       setForm(EMPTY);
       onCreated?.();
       onClose();
