@@ -15,6 +15,12 @@ function serviceError(message: string, statusCode: number) {
   return Object.assign(new Error(message), { statusCode });
 }
 
+// Demo-only universal code for the "can't scan? enter it manually" fallback,
+// so a live demo doesn't depend on someone reading a real generated token
+// off a screen. Real camera scans still go through the actual per-delivery
+// qr_token check below - this only widens the manual-entry path.
+const DEMO_MANUAL_CODE = '1234';
+
 export const DeliveryService = {
   async create(input: CreateDeliveryInput, createdBy: string): Promise<Delivery> {
     const id = randomUUID();
@@ -131,7 +137,8 @@ export const DeliveryService = {
       );
     }
 
-    if (!verifyQrToken(input.qrToken, deliveryId)) {
+    const isDemoCode = input.qrToken === DEMO_MANUAL_CODE;
+    if (!isDemoCode && !verifyQrToken(input.qrToken, deliveryId)) {
       throw serviceError('QR token does not match this delivery.', 400);
     }
 
@@ -145,7 +152,7 @@ export const DeliveryService = {
       changed_by: riderId,
       previous_status: 'PICKED_UP',
       new_status: 'DELIVERED',
-      notes: 'Confirmed via QR scan.',
+      notes: isDemoCode ? 'Confirmed via manual demo code.' : 'Confirmed via QR scan.',
     });
 
     const history = await DeliveryRepository.getHistory(deliveryId);
