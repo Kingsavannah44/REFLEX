@@ -144,7 +144,8 @@ export default function RiderView() {
   const active = orders.filter((o) => o.status !== "delivered");
   const assignedCount = active.filter((o) => o.status === "assigned").length;
   const inTransitCount = active.filter((o) => o.status === "picked_up").length;
-  const deliveredToday = orders.filter((o) => o.status === "delivered" && isToday(o.updated_at)).length;
+  const deliveredOrders = orders.filter((o) => o.status === "delivered");
+  const deliveredToday = deliveredOrders.filter((o) => isToday(o.updated_at)).length;
 
   const selectedOrder = orders.find((o) => o.order_id === selectedId);
   const readyToScan = active.find((o) => o.status === "picked_up");
@@ -163,7 +164,7 @@ export default function RiderView() {
     { key: "home", label: "Home", icon: Home, onClick: () => goTab("home") },
     { key: "deliveries", label: "Deliveries", icon: Package, onClick: () => goTab("deliveries") },
     { key: "scan", label: "Scan to Confirm", icon: QrCode, onClick: () => goTab("scan") },
-    { key: "history", label: "History", icon: Clock },
+    { key: "history", label: "History", icon: Clock, onClick: () => goTab("history") },
     { key: "account", label: "Account", icon: User, onClick: () => goTab("account") },
   ];
 
@@ -255,6 +256,27 @@ export default function RiderView() {
                 {orders.map((o) => (
                   <DeliveryRow key={o.order_id} order={o} onClick={() => openDetails(o)} />
                 ))}
+              </div>
+            )}
+          </div>
+        ) : tab === "history" ? (
+          <div>
+            <div className="flex flex-wrap items-start justify-between gap-y-2 mb-6">
+              <div>
+                <h1 className="text-xl font-semibold text-slate-900">History</h1>
+                <p className="text-sm text-slate-500 mt-0.5">Everything you've delivered.</p>
+              </div>
+              <AccountMenu user={user} />
+            </div>
+            {deliveredOrders.length === 0 ? (
+              <p className="text-sm text-slate-400 italic py-4">Nothing delivered yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {deliveredOrders
+                  .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+                  .map((o) => (
+                    <DeliveryRow key={o.order_id} order={o} onClick={() => openDetails(o)} />
+                  ))}
               </div>
             )}
           </div>
