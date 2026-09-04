@@ -77,7 +77,6 @@ export default function Login() {
               inputMode="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="0700000001"
               className="w-full"
             />
           </div>
