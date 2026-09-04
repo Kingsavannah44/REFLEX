@@ -33,7 +33,7 @@ export default function CustomersList({ orders }) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {customers.map((c) => (
         <div key={c.phone} className="border border-slate-200 rounded-xl p-3.5">
           <div className="flex items-center justify-between mb-3">

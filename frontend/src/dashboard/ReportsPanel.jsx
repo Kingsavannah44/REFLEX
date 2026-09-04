@@ -42,7 +42,7 @@ export default function ReportsPanel({ orders, riders }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="border border-slate-200 rounded-xl p-3.5">
           <div className="text-xl font-semibold text-slate-900">{total}</div>
           <div className="text-xs text-slate-500 mt-0.5">Total deliveries</div>

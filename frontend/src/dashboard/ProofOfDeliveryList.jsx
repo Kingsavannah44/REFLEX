@@ -28,7 +28,7 @@ export default function ProofOfDeliveryList({ orders, users }) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {delivered.map((o) => {
         const rider = users.find((u) => u.user_id === o.assigned_rider);
         return (

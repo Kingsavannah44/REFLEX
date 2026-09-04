@@ -14,6 +14,7 @@ import {
   Phone,
   Search,
   ShieldCheck,
+  Menu,
 } from "lucide-react";
 import DashboardSidebar from "../dashboard/DashboardSidebar";
 import StatCard from "../dashboard/StatCard";
@@ -45,6 +46,7 @@ export default function RetailerView() {
   const [tab, setTab] = useState("dashboard");
   const [search, setSearch] = useState("");
   const [qrOrder, setQrOrder] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Only deliveries the rider hasn't already confirmed still need their QR
   // code shown - once delivered, scanning it again would be pointless.
@@ -104,17 +106,32 @@ export default function RetailerView() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      <DashboardSidebar user={user} items={navItems} activeKey={tab} />
+      <DashboardSidebar
+        user={user}
+        items={navItems}
+        activeKey={tab}
+        mobileOpen={mobileNavOpen}
+        onCloseMobile={() => setMobileNavOpen(false)}
+      />
 
-      <main className="flex-1 min-w-0 p-6">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h1 className="text-xl font-semibold text-slate-900">
-              {greeting()}, {user.full_name.split(" ")[0]}!
-            </h1>
-            <p className="text-sm text-slate-500 mt-0.5">
-              Here's what's happening with your deliveries today.
-            </p>
+      <main className="flex-1 min-w-0 p-4 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-y-2 mb-6">
+          <div className="flex items-start gap-3 min-w-0">
+            <button
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Open menu"
+              className="lg:hidden w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-white shrink-0"
+            >
+              <Menu className="w-4.5 h-4.5" />
+            </button>
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold text-slate-900 truncate">
+                {greeting()}, {user.full_name.split(" ")[0]}!
+              </h1>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Here's what's happening with your deliveries today.
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <button className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-white">
@@ -126,14 +143,14 @@ export default function RetailerView() {
 
         {tab === "dashboard" && (
           <>
-            <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
               <StatCard icon={Package} tone="green" label="Total Deliveries" value={orders.length} sub="All time" />
               <StatCard icon={Clock} tone="amber" label="In Progress" value={inProgress.length} sub="Active now" />
               <StatCard icon={CheckCircle2} tone="blue" label="Completed" value={completed.length} sub="All time" />
               <StatCard icon={Hourglass} tone="purple" label="Pending Assignment" value={pending.length} sub="Need dispatch" />
             </div>
 
-            <div className="grid grid-cols-[1.4fr_1fr] gap-4 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4 mb-6">
               <div className="bg-white border border-slate-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-sm font-semibold text-slate-800">Recent Deliveries</h2>
@@ -178,7 +195,7 @@ export default function RetailerView() {
               {contacts.length === 0 ? (
                 <p className="text-sm text-slate-400 italic py-2">No dispatcher or riders registered yet.</p>
               ) : (
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {contacts.map((c) => (
                     <div key={c.user_id} className="flex items-center gap-3 border border-slate-100 rounded-lg p-3">
                       <Avatar name={c.full_name} size={38} />
@@ -200,7 +217,7 @@ export default function RetailerView() {
 
             <div className="bg-white border border-slate-200 rounded-xl p-4">
               <h2 className="text-sm font-semibold text-slate-800 mb-3">Quick Actions</h2>
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                 <QuickActionCard icon={Plus} tone="green" label="New Delivery" sub="Create a delivery request" onClick={() => setModalOpen(true)} />
                 <QuickActionCard icon={Search} tone="blue" label="Track Delivery" sub="Search an order" onClick={() => setTab("deliveries")} />
                 <QuickActionCard icon={Hourglass} tone="purple" label="Pending" sub={`${pending.length} awaiting dispatch`} onClick={() => setTab("deliveries")} />
@@ -213,7 +230,7 @@ export default function RetailerView() {
 
         {tab === "deliveries" && (
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-y-1 mb-4">
               <h2 className="text-lg font-semibold text-slate-900">My Deliveries</h2>
               <span className="text-xs text-slate-400">Click one to show its QR code</span>
             </div>
