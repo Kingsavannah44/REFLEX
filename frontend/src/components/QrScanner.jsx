@@ -85,6 +85,7 @@ export default function QrScanner({ onScan, onManualConfirm }) {
             placeholder="Paste or type the delivery code"
             className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-green-400"
           />
+          <p className="text-xs text-slate-500">Demo code: 1234</p>
           <button
             type="submit"
             className="w-full bg-green-500 hover:bg-green-600 text-white font-medium text-sm rounded-lg py-2 transition-colors"
