@@ -369,7 +369,7 @@
                 <div class="flow-arrow">&rarr; HTTP REST / 5s Polling &rarr;</div>
                 <div class="flow-box"><strong class="text-emerald" style="display:block;">Node.js API</strong>Express Server Engine</div>
                 <div class="flow-arrow">&rarr; ACID SQL &rarr;</div>
-                <div class="flow-box"><strong class="text-purple" style="display:block;">Database</strong>PostgreSQL / SQLite</div>
+                <div class="flow-box"><strong class="text-purple" style="display:block;">Database</strong>PostgreSQL</div>
             </div>
         </div>
         <p style="color: var(--text-muted); font-size: 0.9rem;">5-second HTTP short polling guarantees lightweight data usage and seamless auto-reconnects on spotty mobile coverage.</p>
@@ -394,9 +394,9 @@
                     <td>Prevents frequent connection drops on weak 3G/4G networks vs WebSockets.</td>
                 </tr>
                 <tr>
-                    <td><strong style="color:var(--text-main);">Password-Verified Local Session</strong></td>
-                    <td>No JWT/refresh tokens, no password reset flow</td>
-                    <td>Each role signs in with real credentials (phone number + password, bcrypt-hashed server-side); session state then stays local rather than token-based, avoiding full OAuth/JWT complexity during rapid sprint execution.</td>
+                    <td><strong style="color:var(--text-main);">JWT Access + Refresh Tokens</strong></td>
+                    <td>No password reset flow, no server-side token revocation list</td>
+                    <td>Each role signs in with real credentials (phone number + password, bcrypt-hashed server-side); short-lived 15-minute access tokens limit exposure if one leaks, and a 7-day refresh token avoids forcing a re-login every 15 minutes.</td>
                 </tr>
                 <tr>
                     <td><strong style="color:var(--text-main);">Single DB Instance</strong></td>
